@@ -107,8 +107,10 @@ const App = () => {
   const handleSend = () => {
     if (!inputText.trim() && attachedFiles.length === 0) return;
 
+
     const newMessage = {
-      id: Date.now(),
+      id: Date.now,
+      proj_id: activeProjectId,
       role: 'user',
       content: inputText,
       attachments: attachedFiles, // Прикрепляем файлы к сообщению
@@ -121,6 +123,27 @@ const App = () => {
 
     setInputText("");
     setAttachedFiles([]); // Очищаем список вложений после отправки
+
+    try {
+    const response = await api.sendMessage(activeProjectId, inputText, attachedFiles);
+
+    const aiResponse = await response.json();
+
+    // 3. Добавляем ответ AI в чат
+    const aiMessage = {
+      id: Date.now() + 1,
+      projectId: activeProjectId,
+      role: 'ai',
+      content: aiResponse.message || aiResponse.content,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    #КТО БУДЕТ ПИСАТЬ ФРОНТ НУЖНО ДОБАВИТЬ СЮДА ЛОГИКУ ТОГО ЧТО ЭТО БУДЕТ ОБРАБАТЫВАТЬСЯ И ЧТО ТО МЕНЯТСЯ НА САЙТЕ
+
+  } catch (error) {
+    console.error('Ошибка отправки сообщения:', error);
+    // Можно показать ошибку пользователю
+  }
+
   };
 
   const handleDocUpdate = (text) => {
@@ -150,7 +173,7 @@ const App = () => {
         const audioBlob = new Blob([data.buffer], { type: 'audio/mp3' });
 
         const audioAttachment = {
-          id: Date.now(),
+          id: Date.now,
           name: `${file.name.split('.')[0]}.mp3`,
           size: (audioBlob.size / 1024 / 1024).toFixed(1) + ' MB',
           oldSize: (file.size / 1024 / 1024).toFixed(1) + ' MB',
@@ -193,6 +216,7 @@ const App = () => {
                   onChange={(e) => setNewProjectName(e.target.value)}
                 />
               </div>
+
 
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
@@ -267,6 +291,7 @@ const App = () => {
           ))}
         </nav>
 
+
         <div className="p-4 space-y-1 bg-[#171e28] border-t border-slate-800">
           <button
             onClick={() => setView('settings')}
@@ -323,6 +348,7 @@ const App = () => {
                 </div>
               </div>
             </div>
+
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
               <div className="p-4 bg-slate-50 border-b border-slate-100 font-medium text-slate-700 flex items-center gap-2">
@@ -388,6 +414,7 @@ const App = () => {
                 <div className={`max-w-[75%] px-1 py-1 rounded-2xl relative shadow-sm text-sm ${msg.role === 'user' ? 'bg-[#effdde] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
                   {msg.content && <p className="px-3 py-2 leading-relaxed">{msg.content}</p>}
 
+
                   {/* синий блок для аудио */}
                   {msg.attachments?.map(file => (
                     <div key={file.id} className="m-1">
@@ -449,6 +476,7 @@ const App = () => {
           </div>
         </main>
       )}
+
 
       {/* --- ПРАВАЯ ПАНЕЛЬ (ДОКУМЕНТ) --- */}
       {view === 'chat' && isRightPanelOpen && (
