@@ -1,52 +1,64 @@
 export const api = {
-  // Отправка сообщения в чат и получение ответа от ИИ
-//  sendMessage: async (text) => {
-//    const response = await fetch('http://localhost:8000/chat', {
-//      method: 'POST',
-//      body: JSON.stringify({ message: text }),
-//      headers: { 'Content-Type': 'application/json' }
-//    });
-//    return response.json();
-//  },
   sendMessage: async (projectId, text, attachments = []) => {
-  if (attachments.length === 0) {
+    console.log('Отправка сообщения:', { projectId, text, attachments });
 
-    const response = await fetch('http://localhost:8000/chat', {
-      method: 'POST',
-      body: JSON.stringify({
-        message: text,
-        projectId: projectId
-      })
-    });
-    return response.json();
-  }
+    if (attachments.length === 0) {
+      const response = await fetch('http://localhost:8000/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: text,
+          projectId: projectId
+        })
+      });
 
-  const allMeta = attachments.map(file => ({
-  name: file.name,
-  type: file.type,
-  size: file.size
-  }));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-  formData.append('projectId', projectId);
-  formData.append('message', text);
-  formData.append('filesMeta', JSON.stringify(allMeta));  // ← ОДНО поле
-
-  attachments.forEach((file, index) => {
-    if (file.blob) {
-      formData.append(`file_${index}`, file.blob, file.name);
+      return response.json();
     }
-  });
 
-  const response = await fetch('http://localhost:8000/chat-with-files', {
-    method: 'POST',
-    body: formData
-  });
-  return response.json();
-}
+    const formData = new FormData(); // <-- ВАЖНО: создаем FormData
 
-  // Отправка Markdown для генерации DOCX
+    formData.append('projectId', projectId);
+    formData.append('message', text);
+
+    const allMeta = attachments.map(file => ({
+      name: file.name,
+      type: file.type || (file.blob ? 'audio' : 'doc'),
+      size: file.size || file.blob?.size
+    }));
+
+    formData.append('filesMeta', JSON.stringify(allMeta));
+
+    // Добавляем файлы
+    attachments.forEach((file) => {
+      const fileBlob = file.blob || file.file;
+      if (fileBlob) {
+        formData.append('files', fileBlob, file.name);
+      }
+    });
+
+    console.log('📤 Отправка FormData с файлами...');
+
+    const response = await fetch('http://localhost:8000/chat-with-files', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Ошибка от сервера:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  },
+
   generateDocx: async (markdown) => {
-    // Здесь будет логика скачивания файла
     console.log("Отправляем на сервер:", markdown);
   }
 };

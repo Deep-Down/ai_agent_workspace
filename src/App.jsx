@@ -8,6 +8,8 @@ import {
   Save, Sliders, Cpu, Database, Network, GitBranch
 } from 'lucide-react';
 
+import { api } from './api';
+
 const App = () => {
   // --- СОСТОЯНИЯ ИНТЕРФЕЙСА ---
   const [attachedFiles, setAttachedFiles] = useState([]); // Файлы, которые ждут отправки
@@ -104,47 +106,64 @@ const App = () => {
   };
 
   // --- ЛОГИКА ЧАТА ---
-  const handleSend = () => {
-    if (!inputText.trim() && attachedFiles.length === 0) return;
+  const handleSend = async () => {
+      if (!inputText.trim() && attachedFiles.length === 0) return;
 
+      // 1. Создаем сообщение пользователя
+      const newMessage = {
+        id: Date.now(), // <- Исправлено: Date.now() вместо Date.now
+        projectId: activeProjectId, // <- Исправлено: projectId вместо proj_id
+        role: 'user',
+        content: inputText,
+        attachments: attachedFiles,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
 
-    const newMessage = {
-      id: Date.now,
-      proj_id: activeProjectId,
-      role: 'user',
-      content: inputText,
-      attachments: attachedFiles, // Прикрепляем файлы к сообщению
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      // 2. Обновляем состояние
+      setProjects(prev => prev.map(p =>
+        p.id === activeProjectId ? { ...p, messages: [...p.messages, newMessage] } : p
+      ));
+
+      setInputText("");
+      setAttachedFiles([]);
+
+      try {
+        console.log('Отправка запроса на сервер...');
+        const response = await api.sendMessage(activeProjectId, inputText, attachedFiles);
+
+        // 4. Добавляем ответ AI
+        if (response && response.success) {
+          const aiMessage = {
+            id: Date.now() + 1,
+            projectId: activeProjectId,
+            role: 'ai',
+            content: response.message,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+
+          setProjects(prev => prev.map(p =>
+            p.id === activeProjectId ? { ...p, messages: [...p.messages, aiMessage] } : p
+          ));
+        } else {
+          console.error('Ошибка от сервера:', response);
+        }
+      } catch (error) {
+        console.error('Ошибка отправки сообщения:', error);
+
+        // Показываем сообщение об ошибке
+        const errorMessage = {
+          id: Date.now() + 1,
+          projectId: activeProjectId,
+          role: 'ai',
+          content: 'Ошибка соединения с сервером. Проверьте, запущен ли бэкенд на порту 8000.',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+
+        setProjects(prev => prev.map(p =>
+          p.id === activeProjectId ? { ...p, messages: [...p.messages, errorMessage] } : p
+        ));
+      }
     };
-
-    setProjects(prev => prev.map(p =>
-      p.id === activeProjectId ? { ...p, messages: [...p.messages, newMessage] } : p
-    ));
-
-    setInputText("");
-    setAttachedFiles([]); // Очищаем список вложений после отправки
-
-    try {
-    const response = await api.sendMessage(activeProjectId, inputText, attachedFiles);
-
-    const aiResponse = await response.json();
-
-    // 3. Добавляем ответ AI в чат
-    const aiMessage = {
-      id: Date.now() + 1,
-      projectId: activeProjectId,
-      role: 'ai',
-      content: aiResponse.message || aiResponse.content,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    #КТО БУДЕТ ПИСАТЬ ФРОНТ НУЖНО ДОБАВИТЬ СЮДА ЛОГИКУ ТОГО ЧТО ЭТО БУДЕТ ОБРАБАТЫВАТЬСЯ И ЧТО ТО МЕНЯТСЯ НА САЙТЕ
-
-  } catch (error) {
-    console.error('Ошибка отправки сообщения:', error);
-    // Можно показать ошибку пользователю
-  }
-
-  };
 
   const handleDocUpdate = (text) => {
     setProjects(prev => prev.map(p => p.id === activeProjectId ? { ...p, markdown: text } : p));
