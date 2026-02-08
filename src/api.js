@@ -21,7 +21,7 @@ export const api = {
       return response.json();
     }
 
-    const formData = new FormData(); // <-- ВАЖНО: создаем FormData
+    const formData = new FormData();
 
     formData.append('projectId', projectId);
     formData.append('message', text);
@@ -42,23 +42,33 @@ export const api = {
       }
     });
 
-    console.log('📤 Отправка FormData с файлами...');
+    console.log('Отправка FormData с файлами...');
 
     const response = await fetch('http://localhost:8000/chat-with-files', {
       method: 'POST',
       body: formData
     });
+    console.log('Статус ответа:', response.status);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Ошибка от сервера:', errorText);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Ошибка сервера:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      }
 
-    return response.json();
+      const result = await response.json();
+      console.log('✅ Ответ получен:', result);
+      return result;
+
   },
 
   generateDocx: async (markdown) => {
-    console.log("Отправляем на сервер:", markdown);
+    const response = await fetch('http://localhost:8000/upload', {
+        method: 'POST',
+        body: JSON.stringify({
+          message: markdown,
+          projectId: projectId
+        })
+      });
   }
 };

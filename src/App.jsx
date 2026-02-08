@@ -165,6 +165,7 @@ const App = () => {
       }
     };
 
+
   const handleDocUpdate = (text) => {
     setProjects(prev => prev.map(p => p.id === activeProjectId ? { ...p, markdown: text } : p));
   };
@@ -203,10 +204,13 @@ const App = () => {
       } catch (err) { alert("Ошибка конвертации"); }
       finally { setIsConverting(false); setProgress(0); }
     } else if (isDoc) {
+      const fileExt = file.name.toLowerCase().split('.').pop();
+      const fileType = fileExt === 'txt' ? 'txt' : 'doc';
+
       setAttachedFiles(prev => [...prev, {
         id: Date.now(),
         name: file.name,
-        type: 'doc',
+        type: fileType,
         file: file
       }]);
     }

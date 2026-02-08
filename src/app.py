@@ -34,22 +34,26 @@ try:
 
     file_store = {}
 
-
     @app.post("/chat-with-files")
     async def upload_file(
             projectId: str = Form(...),
             message: str = Form(...),
             filesMeta: str = Form(...),
             files: List[UploadFile] = File(...)):
-
+        print("\n" + "=" * 50)
+        print(f"📨 ПОЛУЧЕН ЗАПРОС /chat-with-files")
+        print(f"📋 projectId: {projectId}")
+        print(f"💬 message: {message[:100]}...")  # первые 100 символов
+        print(f"📄 filesMeta: {filesMeta}")
+        print(f"📎 Количество файлов: {len(files)}")
         whole_content = []
 
         try:
-
             for i, file in enumerate(files):
                 print(f"Файл {i + 1}: {file.filename}")
                 try:
                     meta_list = json.loads(filesMeta)
+
                     if i < len(meta_list):
                         meta = meta_list[i]
                         if meta.get("type") == "audio":
@@ -57,6 +61,9 @@ try:
                             content = await logic.extract_text_from_audio(file, meta)
                             print(f"Аудио обработано: {len(content)} символов")
                             whole_content.append(content)
+                        elif meta.get("type") == "txt":
+                            mark = await logic.extract_text_from_txt(file)
+                            whole_content.append(mark)
                         else:
                             print(f"Заглушка для типа: {meta.get('type')}")
                     else:
@@ -72,7 +79,7 @@ try:
                 if database:
                     con = {
                         "id": projectId,
-                        "message": message,
+                       # "message": message,
                         "file": content
                     }
                     database.save_products([con])
@@ -85,8 +92,8 @@ try:
             response = await logic.generate_message(content, message)
             print(f"Ответ AI сгенерирован ({len(response) if response else 0} символов)")
 
-
             if response:
+                print(response[:5])
                 return {
                     "success": True,
                     "message": response
@@ -103,31 +110,24 @@ try:
 
 
     @app.post("/chat")
-    async def chat(request: Request):
-        print("Получен запрос /chat")
-
+    async def chat(projectId: str, message: str):
         try:
-            data = await request.json()
-            message = data.get("message", "")
-            projectId = data.get("projectId", "")
-
-            # Получаем все файлы с ключем projectId (заглушка)
-            files = ''
-
-            response = await logic.generate_message(files, message)
-
-            if response:
-                return {
-                    "success": True,
-                    "message": response
-                }
-            else:
-                print("AI вернул пустой ответ")
-                return None
+            print(f"Получено сообщение: {message}")
+            response = await logic.generate_message("", message)  # или другая логика
+            return {
+                "success": True,
+                "message": response
+            }
         except Exception as e:
-            print(f"Ошибка в /chat: {e}")
-            traceback.print_exc()
             raise HTTPException(status_code=500, detail=str(e))
+
+    # @app.get("/upload")
+    # async def upload_file(request: Request):
+    #     data = await request.json()
+    #     message = data.get("message", "")
+    #     projectId = data.get("projectId", "")
+    #     file = logic.generate_docx_from_markdown(message)
+    #     return file
 
     @app.get("/")
     async def root():
@@ -148,9 +148,11 @@ except Exception as e:
     raise
 
 if __name__ == "__main__":
+
     uvicorn.run(
         app,
         host="0.0.0.0",
         port=8000,
+        timeout_keep_alive=300,
         log_level="info"
     )
