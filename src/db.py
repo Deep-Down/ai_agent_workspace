@@ -168,7 +168,7 @@ if __name__ == "__main__":
 
     # Создаем БД и таблицу
     if db.ensure_database_exists():
-        print("✅ БД и таблица созданы")
+        print("БД и таблица созданы")
 
         # Тест сохранения
         test_products = [

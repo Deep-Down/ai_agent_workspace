@@ -66,7 +66,7 @@ try:
                     raise HTTPException(status_code=400, detail="Invalid JSON in metadata")
 
             content = '\n'.join(whole_content)
-            print(f"📊 Общий контент: {len(content)} символов")
+            print(f"Общий контент: {len(content)} символов")
 
             try:
                 if database:
