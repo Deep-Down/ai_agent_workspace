@@ -55,10 +55,13 @@ txt = \
 
 
 def convert_md_to_doc(md_text):
-    splited = md_text.split("## 4")
-    text = ("""# ПРОТОКОЛ ОБСЛЕДОВАНИЯ\n\n## 1. Дата встречи\n""" + splited[0]
-            + """## 3. Участники: \n## 4."""
-            + splited[1])
+    if "## 4" in md_text:
+        splited = md_text.split("## 4")
+        text = ("""# ПРОТОКОЛ ОБСЛЕДОВАНИЯ\n\n## 1. Дата встречи\n""" + splited[0]
+                + """## 3. Участники: \n## 4."""
+                + splited[1])
+    else:
+        text = md_text
     pypandoc.convert_text(text, 'docx', format='md', outputfile='output.docx')
     document = Document('output.docx')
     redefine_styles(document)

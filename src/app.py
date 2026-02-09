@@ -2,6 +2,7 @@ from typing import Optional, List
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 import json
+from convert_md_to_doc import convert_md_to_doc
 from datetime import datetime
 
 from starlette.responses import FileResponse
@@ -41,11 +42,11 @@ try:
             filesMeta: str = Form(...),
             files: List[UploadFile] = File(...)):
         print("\n" + "=" * 50)
-        print(f"📨 ПОЛУЧЕН ЗАПРОС /chat-with-files")
-        print(f"📋 projectId: {projectId}")
-        print(f"💬 message: {message[:100]}...")  # первые 100 символов
-        print(f"📄 filesMeta: {filesMeta}")
-        print(f"📎 Количество файлов: {len(files)}")
+        print(f"ПОЛУЧЕН ЗАПРОС /chat-with-files")
+        print(f"projectId: {projectId}")
+        print(f"message: {message[:100]}...")  # первые 100 символов
+        print(f"filesMeta: {filesMeta}")
+        print(f"Количество файлов: {len(files)}")
         whole_content = []
 
         try:
@@ -121,13 +122,12 @@ try:
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    # @app.get("/upload")
-    # async def upload_file(request: Request):
-    #     data = await request.json()
-    #     message = data.get("message", "")
-    #     projectId = data.get("projectId", "")
-    #     file = logic.generate_docx_from_markdown(message)
-    #     return file
+    @app.get("/upload")
+    async def upload_file(request: Request):
+       data = await request.json()
+       message = data.get("message", "")
+       file = convert_md_to_doc(message)
+       return file
 
     @app.get("/")
     async def root():

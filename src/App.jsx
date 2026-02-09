@@ -164,7 +164,37 @@ const App = () => {
         ));
       }
     };
+  const handleExportDocx = async () => {
+    try {
+        const markdown = activeProject.markdown;
+        const response = await api.generateDocx(markdown);
+        const data = await response.json();
 
+        if (data.error) {
+            console.error('Server error:', data.error);
+            return;
+        }
+
+        // Используем уникальное имя из сервера
+        const a = document.createElement('a');
+        a.href = data.downloadUrl;
+        a.download = data.downloadUrl.split('/').pop(); // берем имя файла из URL
+        a.click();
+
+        // Альтернативно можно использовать fetch для скачивания
+        /*
+        const downloadResponse = await fetch(data.downloadUrl);
+        const blob = await downloadResponse.blob();
+        const url = window.URL.createObjectURL(blob);
+        a.href = url;
+        a.download = `${activeProject.name}.docx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        */
+    } catch (error) {
+        console.error('Export error:', error);
+    }
+  };
 
   const handleDocUpdate = (text) => {
     setProjects(prev => prev.map(p => p.id === activeProjectId ? { ...p, markdown: text } : p));

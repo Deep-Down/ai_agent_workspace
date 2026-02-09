@@ -57,7 +57,7 @@ export const api = {
       }
 
       const result = await response.json();
-      console.log('✅ Ответ получен:', result);
+      console.log('Ответ получен:', result);
       return result;
 
   },
@@ -67,8 +67,8 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({
           message: markdown,
-          projectId: projectId
         })
       });
+
   }
 };

@@ -27,8 +27,7 @@ def text_to_markdown_basic(text):
             md_lines.append(line)
 
     return '\n'.join(md_lines)
-async def generate_docx_from_markdown(markdown):
-    print('Generating docx from markdown')
+
 async def generate_message(text, instructions):
     resp = await ask_llm(text)
     return resp
